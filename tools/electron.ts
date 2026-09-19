@@ -29,12 +29,19 @@ if (!fs.existsSync(path.join(here, 'main.ts'))) {
   process.exit(1);
 }
 
-const prepared = spawnSync(
-  process.execPath,
-  ['--disable-warning=ExperimentalWarning', path.join(root, 'tools', 'prepare.ts')],
-  { cwd: root, stdio: 'inherit' },
-);
-if (prepared.status !== 0) process.exit(prepared.status ?? 1);
+// macOS only, as the helpers it builds are: the Core Audio device query and the
+// Link Audio helper have no Linux build, and Linux is where CI compiles this
+// bundle to prove it compiles. The macOS release job is where they matter.
+if (process.platform === 'darwin') {
+  const prepared = spawnSync(
+    process.execPath,
+    ['--disable-warning=ExperimentalWarning', path.join(root, 'tools', 'prepare.ts')],
+    { cwd: root, stdio: 'inherit' },
+  );
+  if (prepared.status !== 0) process.exit(prepared.status ?? 1);
+} else {
+  console.log('electron: not macOS — skipping tools/prepare.ts');
+}
 
 await esbuild.build({
   entryPoints: [path.join(here, 'main.ts'), path.join(here, 'preload.ts')],
