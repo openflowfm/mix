@@ -7,7 +7,7 @@ else, from a file you already have or a YouTube URL, on a machine you already ow
 ```sh
 npm run watch      # working on it: the dev server and the window, one command
 npm start          # the app, on what is built
-npm run pack     # a .app and a .dmg under release/mix/
+npm run pack       # a .app and a .dmg under release/
 ```
 
 **The app installs its own engine.** Demucs is Python, and none of it ships inside the
@@ -64,6 +64,7 @@ The slices are read off the stems and are then yours to cut, drag and name.
 | how a record is held to the grid for playing and export, how densely, and why not every beat | [`docs/pinned.md`](docs/pinned.md) — `src/pinned.ts`, `straighten.ts`, `schedule.ts`, `components/ExportModal.tsx` |
 | default key detection, manual key correction or migration | [`docs/keys.md`](docs/keys.md) — `electron/keyDetection.ts`, `src/components/LibraryKey.tsx` |
 | comparing original-recording key detectors and published references | [`docs/key-experiments.md`](docs/key-experiments.md) — `electron/keyExperiments.ts`, `src/debug/key/KeyComparison.tsx` |
+| the browser tab `npm run watch` also serves, and why it is the real app | [`docs/reach.md`](docs/reach.md) — `src/main.tsx`, `@openflow/desktop/reach-client.ts` |
 | whether the beats it found are right: the analysis harness in the app, the arms, the batch run | [`docs/harness.md`](docs/harness.md) — `src/debug/`, `tools/mix-warp.ts`, `src/trace.ts` |
 | the focused three-band / RGB waveform comparison | [`docs/waveform-v2.md`](docs/waveform-v2.md) — `src/debug/waveform-v2/` |
 | vector waveform designs, spectral fills, and preset comparisons | [`docs/vector-designs.md`](docs/vector-designs.md) — `src/debug/render/DesignBrowser.tsx`, `musicalVector.ts` |
