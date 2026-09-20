@@ -46,7 +46,7 @@ not reveal new data; it gives the existing data enough room to print every fret.
 assignment is computed over the complete phrase before the visible slice is chosen, so
 panning cannot make the first note on screen jump to a different string.
 
-The drawing itself is `@openflow/widgets/notation/Tablature.tsx`. mix[flow]'s adapter
+The drawing itself is `@openflow/widgets/music/Tablature.tsx`. mix[flow]'s adapter
 owns the instrument-specific work — octave correction and the whole-phrase fret path —
 then hands the widget labelled strings, duration events, a grid and a visible span. That
 is the same boundary chart[flow]'s piano roll uses: the app decides the music, the widget

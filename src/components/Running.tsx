@@ -1,5 +1,5 @@
 import { Button } from '@openflow/widgets/controls/Button.tsx';
-import { Meter } from '@openflow/widgets/controls/Meter.tsx';
+import { Meter } from '@openflow/widgets/music/Meter.tsx';
 import { stemOf } from '../mock.ts';
 import { roughly } from '../openflow.ts';
 import type { Mix } from '../state.ts';

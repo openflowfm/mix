@@ -3,7 +3,7 @@ import {
   Tablature as TablatureWidget,
   type NotationGrid,
   type TablatureNote,
-} from '@openflow/widgets/notation/Tablature.tsx';
+} from '@openflow/widgets/music/Tablature.tsx';
 import {
   assignFrets,
   fretMark,
