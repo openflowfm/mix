@@ -1,6 +1,6 @@
 # The reach view
 
-`npm run watch` opens the window **and** serves the same app to a browser, at
+`npm run dev` opens the window **and** serves the same app to a browser, at
 <http://localhost:5673>. It is the real app, not a screenshot of one:
 your library, your settings, the stems you have already separated.
 

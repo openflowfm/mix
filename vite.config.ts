@@ -49,7 +49,9 @@ export default defineConfig(({ command }) => ({
     sourcemap: true,
   },
   server: {
+    // A preference, not a claim: busy, it moves up, and `tools/app.ts dev`
+    // reads the port it settled on off the socket and tells the shell.
     port: PORT,
-    strictPort: true,
+    strictPort: false,
   },
 }));

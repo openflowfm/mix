@@ -5,7 +5,7 @@
   "author": "Ryan Gavin",
   "type": "module",
   "main": "electron/dist/main.cjs",
-  "description": "mix[flow]: stem separation — a mix in, four parts out.",
+  "description": "mix[flow]: stem separation \u2014 a mix in, four parts out.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/openflowfm/mix.git"
@@ -19,7 +19,6 @@
     "electron": "node --disable-warning=ExperimentalWarning tools/app.ts electron",
     "icons": "node --disable-warning=ExperimentalWarning tools/app.ts icons",
     "start": "node --disable-warning=ExperimentalWarning tools/app.ts run",
-    "watch": "node --disable-warning=ExperimentalWarning tools/app.ts watch",
     "dev": "node --disable-warning=ExperimentalWarning tools/app.ts dev",
     "pack": "node --disable-warning=ExperimentalWarning tools/app.ts pack",
     "ui": "vite --config vite.config.ts",

@@ -9,14 +9,13 @@
 //   electron  main, preload and the server, with esbuild
 //   icons     the .icns, from public/mark.svg
 //   run       build, electron, and open it
-//   watch     the dev server and the window, together — the one to type
-//   dev       electron, and open it against a dev server that is already up
+//   dev       vite and the window, together — the one to type
 //   pack      build, electron, icons, and electron-builder
 //
 // Anything that looks like a flag is handed to electron-builder, which is what
 // keeps `npm run pack -- -c.mac.identity="Developer ID Application: …"` working.
 
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -88,44 +87,46 @@ function open(): void {
 }
 
 /**
- * Working on it: the dev server and the window, in one command.
+ * Working on it: vite and the window, in one command — the one to type. Twice,
+ * in two checkouts or in one, and nothing collides.
  *
- * `watch` is `dev` plus the vite server `dev` refuses to start, and it is the
- * thing to type.
+ * **Nothing here is assigned; everything is discovered.** vite is run in this
+ * process rather than as a child so the port it settles on can be read off its
+ * socket: it prefers the one the registry names, and moves up when that is
+ * taken, exactly as the widgets bench does. Only then does the shell start,
+ * told both — `OPENFLOW_DEV_URL` to open onto, `OPENFLOW_MIX_UI_PORT` to key
+ * its profile and its reach port by. The shell takes no instance lock in dev.
  *
- * `-k` is what makes it one command rather than two in a trench coat: closing
- * the window takes vite with it, and a vite that cannot bind takes the
- * window's retry loop with it rather than leaving it asking forever.
+ * `OPENFLOW_PORT_BASE` still moves vite's preference, for a worktree that wants
+ * a predictable address. Closing the window closes vite, and a signal here
+ * does the same.
  */
-function watch(): void {
-  const quoted = (what: string) => `"${what}"`;
-  run(bin('concurrently'), [
-    '-k',
-    '-n',
-    'mix-ui,mix-app',
-    '-c',
-    'gray,green',
-    `${quoted(bin('vite'))} --config vite.config.ts`,
-    [
-      quoted(process.execPath),
-      '--disable-warning=ExperimentalWarning',
-      quoted(path.join(root, 'tools', 'app.ts')),
-      'dev',
-    ].join(' '),
-  ]);
-}
+async function dev(): Promise<void> {
+  const { createServer } = await import('vite');
+  const ui = await createServer({ configFile: path.join(root, 'vite.config.ts') });
+  await ui.listen();
+  const bound = ui.httpServer?.address();
+  if (!bound || typeof bound === 'string') throw new Error('vite listened on no port');
+  ui.printUrls();
 
-/**
- * The window, on a dev server somebody else is running.
- *
- * It does not start one: the dev server is `watch`'s to own, and an app that
- * started its own would race it for the port. What this does is rebuild the
- * main process — which vite knows nothing about — and open onto whatever is
- * there, retrying until it answers.
- */
-function dev(): void {
   electron();
-  run(bin('electron'), ['.'], { OPENFLOW_DEV: '1' });
+  const shell = spawn(bin('electron'), ['.'], {
+    cwd: root,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      OPENFLOW_DEV: '1',
+      OPENFLOW_DEV_URL: `http://localhost:${bound.port}`,
+      OPENFLOW_MIX_UI_PORT: String(bound.port),
+    },
+  });
+  const end = (code: number) => {
+    shell.kill('SIGTERM');
+    void ui.close().finally(() => process.exit(code));
+  };
+  shell.on('exit', (code) => end(code ?? 0));
+  process.on('SIGINT', () => end(130));
+  process.on('SIGTERM', () => end(143));
 }
 
 const [command, ...rest] = process.argv.slice(2);
@@ -152,16 +153,13 @@ switch (command) {
   case 'run':
     open();
     break;
-  case 'watch':
-    watch();
-    break;
   case 'dev':
-    dev();
+    await dev();
     break;
   default:
     console.error(
       `app: no such command — ${command ?? '(none named)'}.\n` +
-        '     Try: build, electron, icons, pack, run, watch, dev',
+        '     Try: build, electron, icons, pack, run, dev',
     );
     process.exit(1);
 }
