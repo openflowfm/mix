@@ -10,7 +10,7 @@ import { Group, Harness, Shelf, Status, Toolbar } from '@openflow/widgets/debug/
 import { Legend } from '@openflow/widgets/debug/Legend.tsx';
 import { Plot } from '@openflow/widgets/debug/Plot.tsx';
 import { Scope, ScopeRow, type ScopePointer } from '@openflow/widgets/debug/Scope.tsx';
-import { Transport } from '@openflow/widgets/debug/Transport.tsx';
+import { Transport } from '@openflow/widgets/chrome/Transport.tsx';
 import { useAxis } from '@openflow/widgets/debug/useAxis.ts';
 import { useRemembered } from '@openflow/widgets/debug/useRemembered.ts';
 import { spanOf, xOf, type View } from '@openflow/widgets/debug/axis.ts';
@@ -818,7 +818,7 @@ function Track({ mix, song, subject, editing }: { mix: Mix; song: Track; subject
             )}
           </Group>
           <Group caption="listen">
-            <Transport playing={playing} onToggle={toggle} at={head ?? axis.cursor} latency={deck.current.latency()} disabled={!decoded} />
+            <Transport playing={playing} onPlay={toggle} position={{ seconds: head ?? axis.cursor }} fine latency={deck.current.latency()} disabled={!decoded} />
             {song.sources.map((s) => (
               <Toggle
                 key={s}

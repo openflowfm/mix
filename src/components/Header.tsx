@@ -1,9 +1,8 @@
 import { Pointing } from '@openflow/widgets/controls/Pointing.tsx';
-import { PositionDisplay } from './PositionDisplay.tsx';
+import { Transport } from '@openflow/widgets/chrome/Transport.tsx';
 import { useSyncExternalStore, type ReactNode } from 'react';
 import type { MixerEngine } from '../play/engine.ts';
 import { Button } from '@openflow/widgets/controls/Button.tsx';
-import { NumberField } from '@openflow/widgets/controls/NumberField.tsx';
 import { Segmented } from '@openflow/widgets/controls/Segmented.tsx';
 import { Select } from '@openflow/widgets/controls/Select.tsx';
 import { LOOP_LENGTHS } from '../play/timing.ts';
@@ -40,30 +39,9 @@ const exportMark = headerIcon(<><path d="M12 15V3M7 8l5-5 5 5M4 14v6h16v-6" /></
 const preservePitchMark = headerIcon(<><path d="M9 16V4l10-2v8M9 7l10-2" /><ellipse cx="6" cy="17" rx="3" ry="2" /><rect x="14" y="15" width="7" height="6" rx="1" /><path d="M15.5 15v-2a2 2 0 0 1 4 0v2" /></>);
 const settingsMark = headerIcon(<><path d="M10 3h4l.7 3 2 .9 2.6-.9 2 3.4-2 2.2v2.3l2 2.2-2 3.4-2.6-.9-2 .9-.7 3h-4l-.7-3-2-.9-2.6.9-2-3.4 2-2.2v-2.3l-2-2.2 2-3.4 2.6.9 2-.9z" /><circle cx="12" cy="12.2" r="3" /></>);
 
-const play = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M7 4.5v15l13-7.5z" />
-  </svg>
-);
 
-const pause = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <rect x="6" y="4" width="4" height="16" />
-    <rect x="14" y="4" width="4" height="16" />
-  </svg>
-);
 
-const stopMark = (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <rect x="5" y="5" width="14" height="14" />
-  </svg>
-);
 
-const loopMark = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-    <path d="M4 9h13l-3-3M20 15H7l3 3" />
-  </svg>
-);
 
 /** Two rings, joined: the session shared with Live. */
 const linkMark = (
@@ -233,75 +211,60 @@ export function Header({ mix, ready, playView = false, onSelectView, mixer, onSe
               it is the speed the song plays at — the one number on the bar
               that changes what you hear. Measuring it is a separate job, and
               it has a separate group. */}
-          <div className="wdg wdg-control-group mf-group" role="group" aria-label="Transport">
-            <Button
-              onPress={() => mix.setPlaying(!mix.playing)}
-              label={mix.playing ? 'Pause' : 'Play'}
-              title={
-                !mix.playable
-                  ? mix.decoding
-                    ? 'Reading the stems'
-                    : 'No stems loaded'
-                  : mix.waitingForLink
-                    ? 'Waiting for the matching Link bar position. Press to cancel'
-                  : mix.playing
-                    ? 'Pause (Space)'
-                    : 'Play (Space)'
-              }
-              width={26}
-              disabled={!mix.playable}
-              className={mix.playing ? 'mf-playing' : undefined}
-            >
-              {mix.playing ? pause : play}
-            </Button>
-            <Button
-              onPress={mix.stop}
-              label="Stop"
-              title="Stop and return to the top"
-              width={26}
-              disabled={!mix.playable}
-            >
-              {stopMark}
-            </Button>
-            {!playView && <Toggle
-              on={mix.loop}
-              onChange={mix.setLoop}
-              label="Loop"
-              title={
-                playView ? 'Enable / exit the captured loop, or loop whole tracks until In / Out defines a region' : mix.region
-                  ? 'Looping a part of the track. Command-L lets it go'
-                  : 'Loop the whole track. Shift-click the timeline, or Command-L for the selected section'
-              }
-              width={26}
-              className={mix.region ? 'mf-looping-part' : undefined}
-            >
-              {loopMark}
-            </Toggle>}
-            {playView && !mix.linkAudio.enabled && !mixer?.snapshot().decks.some(d=>d.syncLeader) ? <span className="mf-clock" aria-label="Playback tempo" title="Current playback tempo, retained while stopped. The first playing deck establishes the next local leader tempo.">{bpmText(mix.targetBpm)}</span> : <NumberField
-              param={mix.linkAudio.enabled ? LINK_TEMPO : TEMPO}
-              value={mix.targetBpm}
-              display={bpmText(mix.targetBpm)}
-              onChange={(next) => mix.setTempo(Number(next.toFixed(2)))}
-              editable
-              showFill={false}
-              width={44}
-              label={playView ? "Playback tempo" : "Tempo"}
-              disabled={mix.editingGrid}
-              title={
-                playView ? mix.linkAudio.enabled ? 'Shared Link playback tempo, including while stopped.' : 'Adjust playback tempo; synced decks follow. Leaders enable tempo control; Preserve pitch selects whether pitch stays unchanged.' : mix.beats
+          <Transport
+            className="mf-group"
+            playing={mix.playing}
+            onPlay={mix.setPlaying}
+            onStop={mix.stop}
+            disabled={!mix.playable}
+            playTitle={
+              !mix.playable
+                ? mix.decoding
+                  ? 'Reading the stems'
+                  : 'No stems loaded'
+                : mix.waitingForLink
+                  ? 'Waiting for the matching Link bar position. Press to cancel'
+                : mix.playing
+                  ? 'Pause (Space)'
+                  : 'Play (Space)'
+            }
+            stopTitle="Stop and return to the top"
+            loop={playView ? undefined : {
+              on: mix.loop,
+              onChange: mix.setLoop,
+              partial: !!mix.region,
+              title: mix.region
+                ? 'Looping a part of the track. Command-L lets it go'
+                : 'Loop the whole track. Shift-click the timeline, or Command-L for the selected section',
+            }}
+            tempo={{
+              param: mix.linkAudio.enabled ? LINK_TEMPO : TEMPO,
+              value: mix.targetBpm,
+              display: bpmText(mix.targetBpm),
+              label: playView ? 'Playback tempo' : 'Tempo',
+              // A local leader owns the tempo in Play: a reading, not a field.
+              onChange: playView && !mix.linkAudio.enabled && !mixer?.snapshot().decks.some(d=>d.syncLeader)
+                ? undefined
+                : (next) => mix.setTempo(Number(next.toFixed(2))),
+              disabled: mix.editingGrid,
+              title: playView
+                ? mix.linkAudio.enabled ? 'Shared Link playback tempo, including while stopped.'
+                : !mixer?.snapshot().decks.some(d=>d.syncLeader) ? 'Current playback tempo, retained while stopped. The first playing deck establishes the next local leader tempo.'
+                : 'Adjust playback tempo; synced decks follow. Leaders enable tempo control; Preserve pitch selects whether pitch stays unchanged.'
+                : mix.beats
                   ? 'The tempo the stems play at with warp on. The grid is where the beats are'
-                  : 'Playback tempo with Warp on. To change the source timing, use Edit beat grid'
-              }
-            />}
-            {playView && <Button onPress={() => mixer?.normalSpeed()} label="Normal speed"
-              disabled={mixer?.normalSpeedBpm == null}
-              title={mixer?.normalSpeedBpm != null
+                  : 'Playback tempo with Warp on. To change the source timing, use Edit beat grid',
+            }}
+            normalSpeed={playView ? {
+              onPress: () => mixer?.normalSpeed(),
+              disabled: mixer?.normalSpeedBpm == null,
+              title: mixer?.normalSpeedBpm != null
                 ? `Set global tempo to the leader’s original ${bpmText(mixer.normalSpeedBpm)} BPM, including saved grid corrections`
-                : 'Normal speed needs a playing leader with a known BPM; Link owns tempo while enabled'}>
-              1×
-            </Button>}
-            <PositionDisplay bar={mix.bar} bars={mix.bars} seconds={mix.position} />
-          </div>
+                : 'Normal speed needs a playing leader with a known BPM; Link owns tempo while enabled',
+            } : undefined}
+            position={{ bar: mix.bar, bars: mix.bars, seconds: mix.position }}
+            remember="mixflow.header-position.v1"
+          />
           {playView && mixer && <div className="wdg wdg-control-group mf-group" role="group" aria-label="Timing">
             <Select
               items={LAUNCH.map(([,name])=>name)}
