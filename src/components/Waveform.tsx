@@ -1,8 +1,8 @@
 import { useTheme } from '@openflow/widgets/theme/ThemeRoot.tsx';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Peak } from '../audio.ts';
-import { levelsOf, packedOf } from '@openflow/widgets/wave/levels.ts';
-import { densityFor, edgesOf, pathOf, samplesFrom } from '@openflow/widgets/wave/outline.ts';
+import { levelsOf, packedOf } from '@openflow/widgets/music/levels.ts';
+import { densityFor, edgesOf, pathOf, samplesFrom } from '@openflow/widgets/music/outline.ts';
 import { rankOf, rulingOf, shaded, TICKS_PER_BAR, type Rank } from '../grid.ts';
 import { barAt, placeOf, type Beats } from '../warp.ts';
 import type { Span } from '../zoom.ts';

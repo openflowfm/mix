@@ -13,7 +13,7 @@ render choices or the time window.
 
 `src/debug/render/DesignBrowser.tsx` owns track measurement, controls, comparisons and
 overlays. `musicalVector.ts` owns summary preparation and painting. It reuses the shared
-`@openflow/widgets/wave/outline.ts` closed-path curve builder and peak detail ladder.
+`@openflow/widgets/music/outline.ts` closed-path curve builder and peak detail ladder.
 Widgets receive geometry, not mix-specific measurements or knowledge of stems.
 
 ## Combinations

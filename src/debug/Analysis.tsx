@@ -10,7 +10,7 @@ import { Group, Harness, Shelf, Status, Toolbar } from '@openflow/widgets/debug/
 import { Legend } from '@openflow/widgets/debug/Legend.tsx';
 import { Plot } from '@openflow/widgets/debug/Plot.tsx';
 import { Scope, ScopeRow, type ScopePointer } from '@openflow/widgets/debug/Scope.tsx';
-import { Transport } from '@openflow/widgets/chrome/Transport.tsx';
+import { Transport } from '@openflow/widgets/music/Transport.tsx';
 import { useAxis } from '@openflow/widgets/debug/useAxis.ts';
 import { useRemembered } from '@openflow/widgets/debug/useRemembered.ts';
 import { spanOf, xOf, type View } from '@openflow/widgets/debug/axis.ts';

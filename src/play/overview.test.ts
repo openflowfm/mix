@@ -69,8 +69,8 @@ describe('full-track beat overview', () => {
 });
 
 it('retains short transients and their silent gaps from the saved scan, with bounded drawing work', async () => {
-  const { levelsOf, packedOf } = await import('@openflow/widgets/wave/levels.ts');
-  const { edgesOf, densityFor } = await import('@openflow/widgets/wave/outline.ts');
+  const { levelsOf, packedOf } = await import('@openflow/widgets/music/levels.ts');
+  const { edgesOf, densityFor } = await import('@openflow/widgets/music/outline.ts');
   const values = new Float32Array(400 * 5);
   // Two 5ms hits inside one former 62.5ms overview column, separated by silence.
   for (const [bin, peak] of [[2,.9],[9,.6]]) {

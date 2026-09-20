@@ -1,5 +1,5 @@
 import { Pointing } from '@openflow/widgets/controls/Pointing.tsx';
-import { Transport } from '@openflow/widgets/chrome/Transport.tsx';
+import { Transport } from '@openflow/widgets/music/Transport.tsx';
 import { useSyncExternalStore, type ReactNode } from 'react';
 import type { MixerEngine } from '../play/engine.ts';
 import { Button } from '@openflow/widgets/controls/Button.tsx';

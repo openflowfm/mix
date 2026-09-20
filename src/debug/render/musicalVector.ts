@@ -1,5 +1,5 @@
-import { levelsOf, type Steps } from '@openflow/widgets/wave/levels.ts';
-import { edgesOf, pathOf, type Edges } from '@openflow/widgets/wave/outline.ts';
+import { levelsOf, type Steps } from '@openflow/widgets/music/levels.ts';
+import { edgesOf, pathOf, type Edges } from '@openflow/widgets/music/outline.ts';
 import type { View } from '@openflow/widgets/debug/axis.ts';
 import type { Measurement } from '../waveforms/measure.ts';
 import { paintSilk, paintStemSilk } from './silkVector.ts';

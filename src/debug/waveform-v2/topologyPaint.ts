@@ -2,10 +2,10 @@ import type { View } from '@openflow/widgets/debug/axis.ts';
 import { ink } from '@openflow/widgets/debug/ink.ts';
 import type { Model } from './model.ts';
 import { columns, activity, type ColorMode } from './topology.ts';
-import { levelsOf } from '@openflow/widgets/wave/levels.ts';
-import { densityFor, edgesOf } from '@openflow/widgets/wave/outline.ts';
+import { levelsOf } from '@openflow/widgets/music/levels.ts';
+import { densityFor, edgesOf } from '@openflow/widgets/music/outline.ts';
 import { presentationOf, type Style } from './style.ts';
-import { paintSpectralOutline } from '@openflow/widgets/wave/spectralOutline.ts';
+import { paintSpectralOutline } from '@openflow/widgets/music/spectralOutline.ts';
 const ladders=new WeakMap<Model,ReturnType<typeof levelsOf>>();
 function levels(model:Model){
   let found=ladders.get(model);if(found)return found;

@@ -1,4 +1,4 @@
-import type { SpectralOutlineStyle } from '@openflow/widgets/wave/spectralOutline.ts';
+import type { SpectralOutlineStyle } from '@openflow/widgets/music/spectralOutline.ts';
 import type { ColorMode } from './topology.ts';
 export interface Style {
   finish:'vivid'|'clean'; opacity:number; curve:number;

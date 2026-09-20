@@ -9,7 +9,7 @@ import { TRACK_DRAG } from './decks.ts';
 import { browseLibrary, listing } from '../listing.ts';
 import type { Track } from '../openflow.ts';
 import type { Mix } from '../state.ts';
-vi.mock('@openflow/widgets/wave/Waveform.tsx', () => ({ Waveform: () => null }));
+vi.mock('@openflow/widgets/music/Waveform.tsx', () => ({ Waveform: () => null }));
 vi.mock('../components/DebugButton.tsx', () => ({DebugButton: () => null}));
 beforeEach(() => { vi.stubGlobal('requestAnimationFrame', vi.fn(()=>1)); vi.stubGlobal('cancelAnimationFrame',vi.fn()); });
 afterEach(() => {cleanup();vi.unstubAllGlobals();});

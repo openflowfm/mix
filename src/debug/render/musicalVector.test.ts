@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { musicalData, powerPrefix, rmsBetween } from './musicalVector.ts';
-import { edgesOf } from '@openflow/widgets/wave/outline.ts';
+import { edgesOf } from '@openflow/widgets/music/outline.ts';
 it('preserves relative source levels in pigment instead of normalizing each source', () => {
   const loud = new Float32Array(10).fill(0.8), quiet = new Float32Array(10).fill(0.2);
   const model = musicalData({ seconds: 10, step: 1, peak: loud, rms: loud, bands: [loud, quiet, quiet], stems: [{ id: 'vocals', rms: loud }, { id: 'bass', rms: quiet }] });
