@@ -76,7 +76,7 @@ mix[flow].app/Contents/Resources/app/
   python/pyproject.toml, uv.lock    what the engine is
 ```
 
-and builds the rest under `~/Library/Application Support/mix[flow]/runtime/`:
+and builds the rest under `~/.openflow/mix/electron/runtime/` — the machine's, shared by every dev shell:
 
 ```
   env/     pyproject.toml, uv.lock and the .venv uv syncs from them

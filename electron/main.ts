@@ -4,7 +4,7 @@ import { APPS } from '@openflow/desktop/apps.ts';
 import { devUrl } from '@openflow/desktop/dev.ts';
 import { reach } from '@openflow/desktop/reach.ts';
 import { scheme, serve } from '@openflow/desktop/serve.ts';
-import { state } from '@openflow/desktop/state.ts';
+import { machine, state } from '@openflow/desktop/state.ts';
 import { updates } from '@openflow/desktop/update.ts';
 import { lifecycle, only, open, switches } from '@openflow/desktop/window.ts';
 import { ready } from './runtime.ts';
@@ -80,13 +80,16 @@ const DIST = path.resolve(__dirname, '..', '..', 'dist');
  * Where the Python engine is built, which is the one path in this app that
  * belongs to the *machine* rather than to the person.
  *
- * Application Support rather than the library folder: the library is theirs and
+ * `~/.openflow/mix` rather than the library folder: the library is theirs and
  * travels — a folder they might carry to another laptop — and half a gigabyte
- * of architecture-specific wheels has no business in it. `runtime.ts` is asked
- * to build it and cannot ask electron for this itself, on purpose, so that it
- * stays testable.
+ * of architecture-specific wheels has no business in it. And `machine()`
+ * rather than `userData`: a dev shell gets a profile of its own per dev
+ * server, and every one of them should share the engine rather than build it
+ * again. The path is the one the packaged app always used. `runtime.ts` is
+ * asked to build it and cannot ask electron for this itself, on purpose, so
+ * that it stays testable.
  */
-const RUNTIME = path.join(app.getPath('userData'), 'runtime');
+const RUNTIME = path.join(machine(MIX), 'electron', 'runtime');
 const KEY_TOOLS={keyfinder:path.resolve(__dirname,'../../bin/keyfinder'),ffmpeg:path.resolve(__dirname,'../../bin/ffmpeg')};
 
 const DEV = devUrl(MIX);
@@ -107,9 +110,9 @@ const window = (): void => {
 /**
  * One instance. A separation is minutes of the GPU, and two of them interleaved
  * is both of them slower — with two windows that each think they are the one
- * doing it.
+ * doing it. Not in dev, where a second shell is deliberate and knows the cost.
  */
-if (only(app)) {
+if (only(app, DEV)) {
   // Before the first `handle`, because what it records is what it forwards: a
   // handler registered earlier would exist for the window and not for a tab.
   // The same mounts the scheme gets, so both are one description of what may
