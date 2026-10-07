@@ -1,8 +1,16 @@
 # The reach view
 
-`npm run dev` opens the window **and** serves the same app to a browser, at
-<http://localhost:5673>. It is the real app, not a screenshot of one:
+`npm run dev` opens the window **and** serves the same app to a browser, at the
+`http://localhost:<port>/` it prints. It is the real app, not a screenshot of one:
 your library, your settings, the stems you have already separated.
+
+No port here is fixed. vite listens on `PORT` when a launcher sets one, otherwise on a
+free port from the OS; the reach port the tab dials is a second free port. `tools/app.ts
+dev` picks both, bakes the reach port into the page through vite's `define`, and hands
+the shell `OPENFLOW_DEV_URL`, `OPENFLOW_MIX_UI_PORT` and `OPENFLOW_MIX_REACH_PORT` — see
+`@openflow/desktop`'s `docs/registry.md`, "Ports". Anything else that talks to the
+running app, such as `tools/mix-key-backfill.ts`, is given `OPENFLOW_MIX_REACH_PORT` by
+hand from what `npm run dev` printed.
 
 That takes explaining, because it did not used to work. The library lives in the main
 process, the renderer asks for it over IPC, and IPC arrives through a preload that only a

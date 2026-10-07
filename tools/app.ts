@@ -17,6 +17,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import net from 'node:net';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { repairBuilder } from '@openflow/desktop/builderPatch.ts';
@@ -90,24 +91,30 @@ function open(): void {
  * Working on it: vite and the window, in one command — the one to type. Twice,
  * in two checkouts or in one, and nothing collides.
  *
- * **Nothing here is assigned; everything is discovered.** vite is run in this
- * process rather than as a child so the port it settles on can be read off its
- * socket: it prefers the one the registry names, and moves up when that is
- * taken, exactly as the widgets bench does. Only then does the shell start,
- * told both — `OPENFLOW_DEV_URL` to open onto, `OPENFLOW_MIX_UI_PORT` to key
- * its profile and its reach port by. The shell takes no instance lock in dev.
+ * **No port is fixed; every one is handed out.** vite listens on `PORT` when a
+ * launcher set one, and otherwise on whatever free port the OS gives it. It is
+ * run in this process rather than as a child so that port can be read off its
+ * socket. The reach port — where a browser tab finds the app — is a second free
+ * port, picked before vite starts so `vite.config.ts` can bake it into the page.
+ * Only then does the shell start, told all three: `OPENFLOW_DEV_URL` to open
+ * onto, `OPENFLOW_MIX_UI_PORT` to key its profile and allow the tab's origin
+ * by, `OPENFLOW_MIX_REACH_PORT` to listen on. The shell takes no instance lock
+ * in dev.
  *
- * `OPENFLOW_PORT_BASE` still moves vite's preference, for a worktree that wants
- * a predictable address. Closing the window closes vite, and a signal here
- * does the same.
+ * Closing the window closes vite, and a signal here does the same.
  */
 async function dev(): Promise<void> {
+  // Respected when set, so a launcher can name both ends; free otherwise.
+  process.env.OPENFLOW_MIX_REACH_PORT ||= String(await freePort());
+  const reachPort = process.env.OPENFLOW_MIX_REACH_PORT;
+
   const { createServer } = await import('vite');
   const ui = await createServer({ configFile: path.join(root, 'vite.config.ts') });
   await ui.listen();
   const bound = ui.httpServer?.address();
   if (!bound || typeof bound === 'string') throw new Error('vite listened on no port');
-  ui.printUrls();
+  console.log(`\n  mix[flow] dev   http://localhost:${bound.port}/`);
+  console.log(`  reach (tab)     http://127.0.0.1:${reachPort}/\n`);
 
   electron();
   const shell = spawn(bin('electron'), ['.'], {
@@ -118,6 +125,7 @@ async function dev(): Promise<void> {
       OPENFLOW_DEV: '1',
       OPENFLOW_DEV_URL: `http://localhost:${bound.port}`,
       OPENFLOW_MIX_UI_PORT: String(bound.port),
+      OPENFLOW_MIX_REACH_PORT: reachPort,
     },
   });
   const end = (code: number) => {
@@ -127,6 +135,18 @@ async function dev(): Promise<void> {
   shell.on('exit', (code) => end(code ?? 0));
   process.on('SIGINT', () => end(130));
   process.on('SIGTERM', () => end(143));
+}
+
+/** A port nothing is on right now: the OS picks it, and it is let go at once. */
+function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const probe = net.createServer();
+    probe.once('error', reject);
+    probe.listen(0, '127.0.0.1', () => {
+      const { port } = probe.address() as net.AddressInfo;
+      probe.close(() => resolve(port));
+    });
+  });
 }
 
 const [command, ...rest] = process.argv.slice(2);

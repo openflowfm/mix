@@ -5,13 +5,15 @@ import type { Library } from '../src/openflow.ts';
 const args = process.argv.slice(2);
 if (args.some(arg => !['--run', '--reanalyze', '--help'].includes(arg))) throw new Error('Use --run, --reanalyze, or --help');
 if (args.includes('--help')) {
-  console.log('node tools/mix-key-backfill.ts [--run] [--reanalyze]\nRequires npm run watch. Default previews; --run saves original-song key detection.\nExisting results (including Unknown) are skipped unless --reanalyze.\nBass stems are not required. Ctrl+C stops after the current song.');
+  console.log('OPENFLOW_MIX_REACH_PORT=<port> node tools/mix-key-backfill.ts [--run] [--reanalyze]\nRequires npm run dev; <port> is the reach port it prints. Default previews; --run saves original-song key detection.\nExisting results (including Unknown) are skipped unless --reanalyze.\nBass stems are not required. Ctrl+C stops after the current song.');
+} else if (!Number(process.env.OPENFLOW_MIX_REACH_PORT)) {
+  console.error('Set OPENFLOW_MIX_REACH_PORT to the reach port npm run dev prints.'); process.exitCode = 1;
 } else {
   let stopped = false;
   const stop = () => { stopped = true; console.log('Stopping after the current song; completed results remain saved.'); };
   process.on('SIGINT', stop);
   async function invoke<T>(channel: string, args: unknown[] = []): Promise<T> {
-    const response = await fetch('http://127.0.0.1:9673/reach/invoke', {
+    const response = await fetch(`http://127.0.0.1:${process.env.OPENFLOW_MIX_REACH_PORT}/reach/invoke`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ channel: `openflow:${channel}`, args }),
     });

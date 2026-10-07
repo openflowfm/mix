@@ -20,8 +20,8 @@ Momentary tests cover pointer cancellation, capture loss, window blur and keyboa
 
 ## Actual audio output
 
-Open `http://localhost:5673/harness/dj-controls.html` with the worktree's `dev:mix-ui`
-server and choose **Run captured engine audio checks**. Generated buffers drive the
+Open `/harness/dj-controls.html` on the address the worktree's `npm run dev` (or
+`npm run ui`) prints and choose **Run captured engine audio checks**. Generated buffers drive the
 actual MixerEngine graph. OfflineAudioContext renders native source, loop, FX and
 four-channel Phones checks. A separate real-time AudioContext captures the engine's
 Signalsmith worklet through `capture-worklet.js`. These are output measurements, not

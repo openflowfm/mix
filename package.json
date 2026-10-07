@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@openflow/core": "github:openflowfm/core#685db6fd1a8ba77bb8e575c66935a11fb56acce9",
-    "@openflow/desktop": "github:openflowfm/desktop#68c88b626a18cffb75ad81143742b27e0bfe41ef",
+    "@openflow/desktop": "github:openflowfm/desktop#6e9b5b657a701d91578272efba3ec12ccdd45e54",
     "@openflow/widgets": "git+https://github.com/openflowfm/widgets.git#897f23e4d1f94d1bc50cad7aa622501b1ce91b60",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

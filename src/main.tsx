@@ -25,16 +25,18 @@ import { App } from './App.tsx';
  * whole branch and the imports inside it with it. Nothing in `src/` reaches
  * for electron in anger.
  */
+/** The reach port `npm run dev` picked, substituted by vite's `define`. */
+declare const __MIX_REACH_PORT__: number;
+
 async function bridged(root: HTMLElement): Promise<boolean> {
   if (!import.meta.env.DEV) return true;
   if ((globalThis as { openflow?: unknown }).openflow) return true;
-  const [{ attach }, { APPS }, { reachPort }] = await Promise.all([
-    import('@openflow/desktop/reach-client.ts'),
-    import('@openflow/desktop/apps.ts'),
-    import('@openflow/desktop/reach.ts'),
-  ]);
-  const where = `http://127.0.0.1:${reachPort(APPS.mix, {} as NodeJS.ProcessEnv)}`;
+  const { attach } = await import('@openflow/desktop/reach-client.ts');
+  // Picked free by `npm run dev` and baked in by vite.config.ts; 0 when this
+  // server was started on its own, with no app to reach.
+  const where = __MIX_REACH_PORT__ ? `http://127.0.0.1:${__MIX_REACH_PORT__}` : '';
   try {
+    if (!where) throw new Error('no reach port');
     await attach(where);
   } catch {
     // Said, rather than drawn as the empty first-run state, which is what a
@@ -42,7 +44,10 @@ async function bridged(root: HTMLElement): Promise<boolean> {
     const box = document.createElement('div');
     box.style.cssText =
       'font:13px/1.6 ui-monospace,Menlo,monospace;color:#b8b0a6;background:#0b0a09;padding:24px;height:100vh;white-space:pre-wrap';
-    box.textContent = `No app is answering.\n\nNothing is listening on ${where}.\n\nStart the app:\n\n    npm run watch\n\nThe window opens this port whenever it is pointed at a dev server. A packaged build never does.`;
+    const said = where
+      ? `Nothing is listening on ${where}.`
+      : 'This dev server was started without the app, so it has no app to reach.';
+    box.textContent = `No app is answering.\n\n${said}\n\nStart the app:\n\n    npm run dev\n\nThe window opens its reach port whenever it is pointed at a dev server. A packaged build never does.`;
     root.append(box);
     return false;
   }
