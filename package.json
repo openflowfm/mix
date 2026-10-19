@@ -32,7 +32,7 @@
     "test:dsp": "vitest run --config dsp/vitest.config.ts"
   },
   "dependencies": {
-    "@openflow/core": "github:openflowfm/core#685db6fd1a8ba77bb8e575c66935a11fb56acce9",
+    "@openflow/core": "github:openflowfm/core#e5b0874a4406149d79ac9521c62c213978acf094",
     "@openflow/desktop": "github:openflowfm/desktop#6e9b5b657a701d91578272efba3ec12ccdd45e54",
     "@openflow/widgets": "git+https://github.com/openflowfm/widgets.git#897f23e4d1f94d1bc50cad7aa622501b1ce91b60",
     "react": "^19.0.0",
