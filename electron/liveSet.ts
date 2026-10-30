@@ -120,8 +120,18 @@ function grown(xml: string, list: string, item: string, count: number): string {
   });
 }
 
-/** A clip at `at` beats: its place in the arrangement, or zero in a Session slot. */
-function clipOf(clip: LiveClip, id: number, color: number, where: string, at = clip.at): string {
+/** Live's follow actions this writes: on to the next clip, or jump to one (clip 1, which `JumpIndexA` names). */
+const NEXT = 4;
+const JUMP = 9;
+type Follow = typeof NEXT | typeof JUMP;
+
+/**
+ * A clip at `at` beats: its place in the arrangement, or zero in a Session
+ * slot. A Session clip follows on when it ends (`IsLinked`: after its own
+ * length), so a launched section plays the song from there and the last loops
+ * it back to the first.
+ */
+function clipOf(clip: LiveClip, id: number, color: number, where: string, at = clip.at, follow: Follow | null = null): string {
   const seconds = clip.frames / clip.rate;
   const beats = (seconds * clip.bpm) / 60;
   const end = num(beats);
@@ -179,13 +189,13 @@ ${t}	<FollowAction>
 ${t}		<FollowTime Value="4" />
 ${t}		<IsLinked Value="true" />
 ${t}		<LoopIterations Value="1" />
-${t}		<FollowActionA Value="4" />
+${t}		<FollowActionA Value="${follow ?? NEXT}" />
 ${t}		<FollowActionB Value="0" />
 ${t}		<FollowChanceA Value="100" />
 ${t}		<FollowChanceB Value="0" />
 ${t}		<JumpIndexA Value="1" />
 ${t}		<JumpIndexB Value="1" />
-${t}		<FollowActionEnabled Value="false" />
+${t}		<FollowActionEnabled Value="${follow !== null}" />
 ${t}	</FollowAction>
 ${t}	<Grid>
 ${t}		<FixedNumerator Value="1" />
@@ -303,7 +313,8 @@ export function liveSetOf(template: string, tracks: readonly LiveTrack[], tempo:
     for (const clip of track.clips) {
       const slot = new RegExp(`(<MainSequencer>[\\s\\S]*?<ClipSlot Id="${clip.scene}">\\s*<LomId Value="0" />\\s*<ClipSlot>\\s*)<Value />`);
       if (!slot.test(xml)) throw new Error(`no clip slot ${clip.scene} in the Live template track`);
-      xml = xml.replace(slot, `$1<Value>${clipOf(clip, 0, track.color, where, 0)}\n\t\t\t\t\t\t\t\t\t</Value>`);
+      const follow = clip === track.clips.at(-1) ? JUMP : NEXT;
+      xml = xml.replace(slot, `$1<Value>${clipOf(clip, 0, track.color, where, 0, follow)}\n\t\t\t\t\t\t\t\t\t</Value>`);
     }
     return xml;
   });
