@@ -24,7 +24,11 @@ import zlib from 'node:zlib';
  * and moved off it Live stretches it like any warped loop. The tempo is set,
  * and where sections were laid at their own tempos the tempo track steps at each.
  *
- * Samples are referred to relative to the set, so the folder moves as one.
+ * Samples are referred to as Live refers to any file outside a project
+ * (`RelativePathType` 1, external): relative to the set, so the folder moves
+ * as one, and by absolute path, so a set moved away on its own still finds
+ * them. Marked as the current project's (3), a set outside a Live Project
+ * loses every sample the moment it is moved.
  */
 
 /** One file on a track: where it sits in the arrangement, in beats, and what it was laid at. */
@@ -178,7 +182,7 @@ ${t}	</ScaleInformation>
 ${t}	<AutomationEnvelopesListWrapper LomId="0" />
 ${t}	<SampleRef>
 ${t}		<FileRef>
-${t}			<RelativePathType Value="3" />
+${t}			<RelativePathType Value="1" />
 ${t}			<RelativePath Value="${escape(relative)}" />
 ${t}			<Path Value="${escape(clip.file)}" />
 ${t}			<Type Value="2" />
