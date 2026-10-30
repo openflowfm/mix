@@ -6,6 +6,7 @@ import { barsOf, DENSITIES, errorsOf, type Every } from '../src/pinned.ts';
 import { straightenedPaced, type Ruling } from '../src/straighten.ts';
 import { resampled, tempoBetween, BEATS_PER_BAR, type Beats } from '../src/warp.ts';
 import { destination } from './destination.ts';
+import { liveSetOf, liveTemplate, markProject, writeLiveSet, type LiveTrack } from './liveSet.ts';
 
 /**
  * The stems laid straight at a tempo, into the export folder.
@@ -79,7 +80,12 @@ export interface Written {
   worst?: number;
   /** The tempo each section was laid at, in order, when the stems were cut with a map. */
   tempos?: number[];
+  /** The Live Set written beside the stems — `liveSet.ts` — when there is a Live on this machine to make one from. */
+  set?: string;
 }
+
+/** Live's palette, by stem: the colours a drum, bass and vocal track usually get in a set. */
+const COLORS: Record<string, number> = { drums: 1, bass: 13, vocals: 26, other: 16, guitar: 4, piano: 21 };
 
 /** One section to lay on its own: its bars from 1.1.1, its tempo, and the name it goes out under. */
 interface Section {
@@ -180,6 +186,7 @@ export async function exportStems(root: string, ask: ExportAsk, progress?: (at: 
   let every: Every | undefined;
   let worst: number | undefined;
   const lines = linesOf(ask.every);
+  const tracks: LiveTrack[] = [];
   for (const [index, source] of ask.sources.entries()) {
     if (!/^[a-z0-9_-]+$/i.test(source)) throw new Error(`not a source: ${source}`);
     const bytes = fs.readFileSync(path.join(root, ask.stems, `${source}.wav`));
@@ -210,6 +217,8 @@ export async function exportStems(root: string, ask: ExportAsk, progress?: (at: 
     };
     const folder = sections || ask.slices?.length ? path.join(where, `${index + 1} - ${source}`) : where;
     if (folder !== where) fs.mkdirSync(folder, { recursive: true });
+    const track: LiveTrack = { name: source, color: COLORS[source] ?? 0, clips: [] };
+    tracks.push(track);
     if (sections) {
       // Each section on its own, at its own tempo: only its stretch of the
       // output is laid, and the map is pinned exactly as it would be for the
@@ -224,6 +233,7 @@ export async function exportStems(root: string, ask: ExportAsk, progress?: (at: 
         const file = path.join(folder, `${section.label} - ${tidy(ask.title)} - ${source} - ${tempoLabel(section.to)}bpm.wav`);
         fs.writeFileSync(file, Buffer.from(wavOf(laid.channels, laid.rate)));
         files.push(file);
+        track.clips.push({ file, name: section.label, at: section.barA * BEATS_PER_BAR, scene: k, bpm: section.to, frames: laid.channels[0]?.length ?? 0, rate: laid.rate });
         seconds += laid.seconds;
         speed = laid.speed;
       }
@@ -238,7 +248,7 @@ export async function exportStems(root: string, ask: ExportAsk, progress?: (at: 
     const total = laid.channels[0]?.length ?? 0;
     const cuts = cutsFor(ask.slices, (BEATS_PER_BAR * 60 * laid.rate) / ask.to, total);
     const label = tempoLabel(ask.to);
-    for (const cut of cuts) {
+    for (const [scene, cut] of cuts.entries()) {
       const file = path.join(
         folder,
         cut.label
@@ -248,11 +258,22 @@ export async function exportStems(root: string, ask: ExportAsk, progress?: (at: 
       const channels = laid.channels.map((channel) => channel.subarray(cut.from, cut.upto));
       fs.writeFileSync(file, Buffer.from(wavOf(channels, laid.rate)));
       files.push(file);
+      const at = (cut.from / laid.rate) * (ask.to / 60);
+      track.clips.push({ file, name: cut.label ?? source, at, scene, bpm: ask.to, frames: cut.upto - cut.from, rate: laid.rate });
     }
     bars = laid.bars;
     seconds = laid.seconds;
     speed = laid.speed;
     parts = cuts.length;
   }
-  return { where, files, bars, seconds, speed, parts, every, worst, tempos: sections ? tempos : undefined };
+  // The set last, once every file it names is on disk.
+  const template = liveTemplate();
+  let set: string | undefined;
+  if (template) {
+    const steps = sections ? sections.map((s) => ({ at: s.barA * BEATS_PER_BAR, bpm: s.to })) : [{ at: 0, bpm: ask.to }];
+    set = path.join(where, `${tidy(ask.title)}.als`);
+    markProject(where);
+    writeLiveSet(set, liveSetOf(template, tracks, steps, where));
+  }
+  return { where, files, bars, seconds, speed, parts, every, worst, tempos: sections ? tempos : undefined, set };
 }

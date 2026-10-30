@@ -240,7 +240,7 @@ export function ExportModal({ mix }: { mix: Mix }) {
         ? ` · pinned ${everyText(done.every)}${done.worst && done.worst >= 0.0005 ? `, worst ${line} ${(done.worst * 1000).toFixed(0)} ms off` : ''}`
         : '';
       const laid = done.tempos && Math.min(...done.tempos) !== Math.max(...done.tempos) ? ` · laid at ${Math.min(...done.tempos)}–${Math.max(...done.tempos)}` : '';
-      setWrote(`${done.files.length} wav · ${done.bars} bars${cut}${laid}${pinned} · ${done.where}`);
+      setWrote(`${done.files.length} wav${done.set ? ' + Live set' : ''} · ${done.bars} bars${cut}${laid}${pinned} · ${done.where}`);
     } catch (error) {
       setWrote(`failed — ${error instanceof Error ? error.message : String(error)}`);
     } finally {
