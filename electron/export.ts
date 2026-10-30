@@ -6,7 +6,7 @@ import { barsOf, DENSITIES, errorsOf, type Every } from '../src/pinned.ts';
 import { straightenedPaced, type Ruling } from '../src/straighten.ts';
 import { resampled, tempoBetween, BEATS_PER_BAR, type Beats } from '../src/warp.ts';
 import { destination } from './destination.ts';
-import { liveSetOf, liveTemplate, writeLiveSet, type LiveTrack } from './liveSet.ts';
+import { liveSetOf, liveTemplate, markProject, writeLiveSet, type LiveTrack } from './liveSet.ts';
 
 /**
  * The stems laid straight at a tempo, into the export folder.
@@ -233,7 +233,7 @@ export async function exportStems(root: string, ask: ExportAsk, progress?: (at: 
         const file = path.join(folder, `${section.label} - ${tidy(ask.title)} - ${source} - ${tempoLabel(section.to)}bpm.wav`);
         fs.writeFileSync(file, Buffer.from(wavOf(laid.channels, laid.rate)));
         files.push(file);
-        track.clips.push({ file, name: section.label, at: section.barA * BEATS_PER_BAR, bpm: section.to, frames: laid.channels[0]?.length ?? 0, rate: laid.rate });
+        track.clips.push({ file, name: section.label, at: section.barA * BEATS_PER_BAR, scene: k, bpm: section.to, frames: laid.channels[0]?.length ?? 0, rate: laid.rate });
         seconds += laid.seconds;
         speed = laid.speed;
       }
@@ -248,7 +248,7 @@ export async function exportStems(root: string, ask: ExportAsk, progress?: (at: 
     const total = laid.channels[0]?.length ?? 0;
     const cuts = cutsFor(ask.slices, (BEATS_PER_BAR * 60 * laid.rate) / ask.to, total);
     const label = tempoLabel(ask.to);
-    for (const cut of cuts) {
+    for (const [scene, cut] of cuts.entries()) {
       const file = path.join(
         folder,
         cut.label
@@ -259,7 +259,7 @@ export async function exportStems(root: string, ask: ExportAsk, progress?: (at: 
       fs.writeFileSync(file, Buffer.from(wavOf(channels, laid.rate)));
       files.push(file);
       const at = (cut.from / laid.rate) * (ask.to / 60);
-      track.clips.push({ file, name: cut.label ?? source, at, bpm: ask.to, frames: cut.upto - cut.from, rate: laid.rate });
+      track.clips.push({ file, name: cut.label ?? source, at, scene, bpm: ask.to, frames: cut.upto - cut.from, rate: laid.rate });
     }
     bars = laid.bars;
     seconds = laid.seconds;
@@ -272,6 +272,7 @@ export async function exportStems(root: string, ask: ExportAsk, progress?: (at: 
   if (template) {
     const steps = sections ? sections.map((s) => ({ at: s.barA * BEATS_PER_BAR, bpm: s.to })) : [{ at: 0, bpm: ask.to }];
     set = path.join(where, `${tidy(ask.title)}.als`);
+    markProject(where);
     writeLiveSet(set, liveSetOf(template, tracks, steps, where));
   }
   return { where, files, bars, seconds, speed, parts, every, worst, tempos: sections ? tempos : undefined, set };

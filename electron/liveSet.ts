@@ -24,19 +24,27 @@ import zlib from 'node:zlib';
  * and moved off it Live stretches it like any warped loop. The tempo is set,
  * and where sections were laid at their own tempos the tempo track steps at each.
  *
- * Samples are referred to as Live refers to any file outside a project
- * (`RelativePathType` 1, external): relative to the set, so the folder moves
- * as one, and by absolute path, so a set moved away on its own still finds
- * them. Marked as the current project's (3), a set outside a Live Project
- * loses every sample the moment it is moved.
+ * **The same clips are in the Session too**, one scene per section: scene one
+ * launches the intro on every stem, scene two the next section, and each scene
+ * is named for its section. Where sections were laid at their own tempos each
+ * scene carries its tempo, so launching it sets the set's. The set grows as
+ * many scenes as there are sections; Live's default has eight.
+ *
+ * **The export folder is a Live Project**, which is a folder with an
+ * `Ableton Project Info` folder in it — `markProject`. The samples are already
+ * inside it, so they are referred to as the project's (`RelativePathType` 3):
+ * Live keeps them where they are rather than copying them into the User
+ * Library when the set is saved, and the folder moves anywhere as one.
  */
 
-/** One file on a track: where it sits in the arrangement, in beats, and what it was laid at. */
+/** One file on a track: where it sits in the arrangement, in beats, the scene it launches from, and what it was laid at. */
 export interface LiveClip {
   file: string;
   name: string;
   /** Beats from 1.1.1. */
   at: number;
+  /** The Session scene, from zero: its section's place in the song. */
+  scene: number;
   bpm: number;
   frames: number;
   rate: number;
@@ -96,7 +104,24 @@ function tracksIn(body: string): { kind: string; xml: string }[] {
   return found;
 }
 
-function clipOf(clip: LiveClip, id: number, color: number, where: string): string {
+/**
+ * Every `list` in `xml` grown to `count` of its `item`s, each new one a copy of
+ * the last with the next id: the scenes, and each track's clip slots, which
+ * Live wants one of per scene.
+ */
+function grown(xml: string, list: string, item: string, count: number): string {
+  return xml.replace(new RegExp(`(<${list}>)([\\s\\S]*?)(\\n\\t*</${list}>)`, 'g'), (_match, open: string, body: string, close: string) => {
+    const items = [...body.matchAll(new RegExp(`\\n(\\t*)<${item} Id="(\\d+)">[\\s\\S]*?\\n\\1</${item}>`, 'g'))];
+    const last = items.at(-1);
+    if (!last) return open + body + close;
+    const more: string[] = [];
+    for (let id = Number(last[2]) + 1; id < count; id++) more.push(last[0].replace(`<${item} Id="${last[2]}">`, `<${item} Id="${id}">`));
+    return open + body + more.join('') + close;
+  });
+}
+
+/** A clip at `at` beats: its place in the arrangement, or zero in a Session slot. */
+function clipOf(clip: LiveClip, id: number, color: number, where: string, at = clip.at): string {
   const seconds = clip.frames / clip.rate;
   const beats = (seconds * clip.bpm) / 60;
   const end = num(beats);
@@ -104,11 +129,11 @@ function clipOf(clip: LiveClip, id: number, color: number, where: string): strin
   const relative = path.relative(where, clip.file).split(path.sep).join('/');
   const t = '\t'.repeat(9);
   return `
-${t}<AudioClip Id="${id}" Time="${num(clip.at)}">
+${t}<AudioClip Id="${id}" Time="${num(at)}">
 ${t}	<LomId Value="0" />
 ${t}	<LomIdView Value="0" />
-${t}	<CurrentStart Value="${num(clip.at)}" />
-${t}	<CurrentEnd Value="${num(clip.at + beats)}" />
+${t}	<CurrentStart Value="${num(at)}" />
+${t}	<CurrentEnd Value="${num(at + beats)}" />
 ${t}	<Loop>
 ${t}		<LoopStart Value="0" />
 ${t}		<LoopEnd Value="${end}" />
@@ -182,7 +207,7 @@ ${t}	</ScaleInformation>
 ${t}	<AutomationEnvelopesListWrapper LomId="0" />
 ${t}	<SampleRef>
 ${t}		<FileRef>
-${t}			<RelativePathType Value="1" />
+${t}			<RelativePathType Value="3" />
 ${t}			<RelativePath Value="${escape(relative)}" />
 ${t}			<Path Value="${escape(clip.file)}" />
 ${t}			<Type Value="2" />
@@ -259,6 +284,8 @@ export function liveSetOf(template: string, tracks: readonly LiveTrack[], tempo:
   if (!Number.isFinite(next)) throw new Error('no NextPointeeId in the Live template');
   const trackIds = found.map((track) => Number(/ Id="(\d+)"/.exec(track.xml)?.[1] ?? 0));
   let trackId = Math.max(...trackIds) + 1;
+  const had = (/\t\t<Scenes>[\s\S]*?\t\t<\/Scenes>/.exec(template)?.[0].match(/<Scene Id=/g) ?? []).length;
+  const scenes = Math.max(had, ...tracks.flatMap((track) => track.clips.map((clip) => clip.scene + 1)));
 
   const made = tracks.map((track) => {
     let xml = prototype.xml.replace(/^(\t\t\t<AudioTrack Id=")\d+"/, `$1${trackId++}"`);
@@ -267,15 +294,33 @@ export function liveSetOf(template: string, tracks: readonly LiveTrack[], tempo:
     xml = xml.replace(/<(\w*Target|Pointee) Id="\d+"/g, (_match, tag: string) => `<${tag} Id="${next++}"`);
     xml = xml.replace(/^(\t\t\t\t<Name>\n\t\t\t\t\t<EffectiveName Value=")[^"]*(" \/>\n\t\t\t\t\t<UserName Value=")[^"]*"/m, `$1${escape(track.name)}$2${escape(track.name)}"`);
     xml = xml.replace(/^(\t\t\t\t<Color Value=")\d+"/m, `$1${track.color}"`);
+    xml = grown(xml, 'ClipSlotList', 'ClipSlot', scenes);
     const clips = track.clips.map((clip, index) => clipOf(clip, index, track.color, where)).join('');
     // The first sample sequencer is the arrangement's; the second is freeze's.
     const empty = /(<MainSequencer>[\s\S]*?<Sample>\s*<ArrangerAutomation>\s*)<Events \/>/;
     if (!empty.test(xml)) throw new Error('no arrangement in the Live template track');
-    return xml.replace(empty, `$1<Events>${clips}\n\t\t\t\t\t\t\t\t</Events>`);
+    xml = xml.replace(empty, `$1<Events>${clips}\n\t\t\t\t\t\t\t\t</Events>`);
+    for (const clip of track.clips) {
+      const slot = new RegExp(`(<MainSequencer>[\\s\\S]*?<ClipSlot Id="${clip.scene}">\\s*<LomId Value="0" />\\s*<ClipSlot>\\s*)<Value />`);
+      if (!slot.test(xml)) throw new Error(`no clip slot ${clip.scene} in the Live template track`);
+      xml = xml.replace(slot, `$1<Value>${clipOf(clip, 0, track.color, where, 0)}\n\t\t\t\t\t\t\t\t\t</Value>`);
+    }
+    return xml;
   });
 
   let set = head + [...made, ...returns.map((track) => track.xml)].join('\n') + '\n' + template.slice(close);
   set = set.replace(/<NextPointeeId Value="\d+" \/>/, `<NextPointeeId Value="${next}" />`);
+
+  // A scene per section, named for it, and carrying its tempo where the
+  // sections were laid at more than one.
+  set = grown(set, 'Scenes', 'Scene', scenes);
+  const named = tracks[0]?.clips ?? [];
+  const mixed = new Set(named.map((clip) => clip.bpm)).size > 1;
+  for (const clip of named) {
+    const scene = new RegExp(`(\\t\\t\\t<Scene Id="${clip.scene}">[\\s\\S]*?<Name Value=")[^"]*("[\\s\\S]*?<Tempo Value=")[^"]*(" />\\s*<IsTempoEnabled Value=")\\w+"`);
+    if (!scene.test(set)) throw new Error(`no scene ${clip.scene} in the Live template`);
+    set = set.replace(scene, `$1${escape(clip.name)}$2${num(clip.bpm)}$3${mixed}"`);
+  }
 
   // The tempo: its value, and the envelope on it, which is what Live plays.
   const first = tempo[0]?.bpm ?? 120;
@@ -294,6 +339,11 @@ export function liveSetOf(template: string, tracks: readonly LiveTrack[], tempo:
     events.push(`\n${t}<FloatEvent Id="${id++}" Time="${num(step.at)}" Value="${num(step.bpm)}" />`);
   }
   return set.replace(envelope, `$1${events.join('')}$2`);
+}
+
+/** Make `where` a Live Project: an empty `Ableton Project Info` folder is all Live looks for. */
+export function markProject(where: string): void {
+  fs.mkdirSync(path.join(where, 'Ableton Project Info'), { recursive: true });
 }
 
 /** Write it gzipped, which is what a `.als` is. */
