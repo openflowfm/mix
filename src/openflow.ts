@@ -250,6 +250,8 @@ export interface Written {
   worst?: number;
   /** The tempo each section was laid at, in order, when the stems were cut with a map. */
   tempos?: number[];
+  /** The Live Set written beside the stems, when there is a Live on this machine to make one from. */
+  set?: string;
 }
 
 /**
