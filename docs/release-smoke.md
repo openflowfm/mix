@@ -36,7 +36,7 @@ and output-latency observations manual even when their underlying commands have 
 
 ```sh
 npm ci
-npx playwright install chromium
+npx playwright install --only-shell chromium
 npm run test:browser
 # A bounded repeatability run; every failure is retained, no automatic retries:
 npm run test:browser -- --repeat-each=3
